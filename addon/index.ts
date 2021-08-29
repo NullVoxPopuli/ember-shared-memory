@@ -1,26 +1,22 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { assert } from '@ember/debug';
+
+import type { Decorator, DecoratorPropertyDescriptor } from './-private/decorator';
+
 /* eslint-disable @typescript-eslint/ban-types */
 type Stringy = string | string[] | Array<{ toString: () => string }>;
 
 type Key = string | Stringy;
 
-type Decorator = (
-  target: object,
-  key: string | symbol,
-  descriptor: PropertyDescriptor
-) => PropertyDescriptor;
-
-type DecoratorFactory = Decorator | ((key: Key) => Decorator);
-
-export function shared(target: object, key: string | symbol, descriptor: PropertyDescriptor): void;
-export function shared(
-  key: Key
-): (target: object, key: string | symbol, descriptor: PropertyDescriptor) => void;
+export function shared(target: object, key: string, desc?: DecoratorPropertyDescriptor): any;
+export function shared(key: Key): Decorator;
 
 /**
+ * @decorator
  *
+ * shares a value between any object with a matching key.
  */
-export function shared(...args: any[]): ReturnType<DecoratorFactory> {
+export function shared(...args: any[]): Decorator | DecoratorPropertyDescriptor {
   if (args.length === 1) {
     let decorator: Decorator = (target, propName, descriptor) => {
       return decoratorCachedVia(target, propName, descriptor, args[0]);
@@ -40,47 +36,78 @@ export function shared(...args: any[]): ReturnType<DecoratorFactory> {
   );
 }
 
+const DEFAULT_CACHE = new WeakMap<object, unknown>();
+
 function decoratorCachedVia(
   target: object,
   propName: string | symbol,
-  descriptor: PropertyDescriptor,
+  descriptor?: DecoratorPropertyDescriptor,
   key?: Key
 ) {
-  let oldGet = descriptor.get;
-
-  console.log({ target, propName, key, descriptor });
+  assert(
+    `@shared cannot be used without a descriptor-providing property/method/getter`,
+    descriptor
+  );
 
   /**
    * value is assigned a value,
    * replace with getter so we can auto-track and sync
    */
-  if ('initializer' in descriptor) {
+  if (descriptor.initializer) {
     let { initializer } = descriptor;
-    // TODO: store this based on key
-    let value;
 
     return {
       configurable: true,
       enumerable: true,
       get: function () {
-        console.log(this.constructor, { target, propName, key });
+        // TODO: add in args, if they exist
+        let existing = DEFAULT_CACHE.get(this.constructor);
 
-        return value ?? initializer();
+        if (existing) {
+          return existing;
+        }
+
+        let initial = initializer();
+
+        DEFAULT_CACHE.set(this.constructor, initial);
+
+        return initial;
       },
-      set: function (newValue) {
-        value = newValue;
-
-        return value;
+      set: function (newValue: unknown) {
+        DEFAULT_CACHE.set(this.constructor, newValue);
       },
     };
   }
 
-  descriptor.get = function () {
-    console.log({ target, propName, key });
-    console.log(this.constructor);
+  if (descriptor.get) {
+    let oldGet = descriptor.get;
 
-    return oldGet();
-  };
+    return {
+      configurable: true,
+      enumerable: false,
+      get: function () {
+        // TODO: add in args, if they exist
+        let existing = DEFAULT_CACHE.get(this.constructor);
 
-  return descriptor;
+        if (existing) {
+          assert(`expected cached getter to be a function`, typeof existing === 'function');
+
+          return existing.call(this);
+        }
+
+        window.a = window.a || [];
+        window.a.push(this.constructor);
+        // console.log(this.constructor)
+
+        DEFAULT_CACHE.set(this.constructor, oldGet);
+
+        let initial = oldGet.call(this);
+
+        return initial;
+      },
+      set: undefined,
+    };
+  }
+
+  assert(`Descriptor not supported`);
 }
