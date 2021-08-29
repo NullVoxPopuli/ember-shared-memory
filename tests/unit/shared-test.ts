@@ -3,10 +3,9 @@ import { settled } from '@ember/test-helpers';
 import { module, test } from 'qunit';
 import { setupTest } from 'ember-qunit';
 
-import { shared, useFunction } from 'ember-shared-memory';
+import { shared } from 'ember-shared-memory';
 
 module('shared', function () {
-  module('in js', function (hooks) {
     setupTest(hooks);
 
     test('it works', async function (assert) {
@@ -27,5 +26,4 @@ module('shared', function () {
 
       assert.equal(foo2.rand.value, rand1);
     });
-  });
 });
