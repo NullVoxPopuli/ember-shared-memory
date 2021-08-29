@@ -15,11 +15,14 @@ module('shared', function (hooks) {
     let foo2 = new Test();
 
     assert.equal(foo1.num, foo2.num);
+    assert.equal(foo1.num, 2);
 
     foo1.num = 3;
     assert.equal(foo1.num, foo2.num);
+    assert.equal(foo1.num, 3);
 
     foo2.num = 7;
     assert.equal(foo1.num, foo2.num);
+    assert.equal(foo1.num, 7);
   });
 });

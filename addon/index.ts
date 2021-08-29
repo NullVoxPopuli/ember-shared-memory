@@ -48,7 +48,32 @@ function decoratorCachedVia(
 ) {
   let oldGet = descriptor.get;
 
-  console.log({ target, propName, key });
+  console.log({ target, propName, key, descriptor });
+
+  /**
+   * value is assigned a value,
+   * replace with getter so we can auto-track and sync
+   */
+  if ('initializer' in descriptor) {
+    let { initializer } = descriptor;
+    // TODO: store this based on key
+    let value;
+
+    return {
+      configurable: true,
+      enumerable: true,
+      get: function () {
+        console.log(this.constructor, { target, propName, key });
+
+        return value ?? initializer();
+      },
+      set: function (newValue) {
+        value = newValue;
+
+        return value;
+      },
+    };
+  }
 
   descriptor.get = function () {
     console.log({ target, propName, key });
