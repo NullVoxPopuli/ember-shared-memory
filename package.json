@@ -28,7 +28,7 @@
     "postpack": "ember ts:clean"
   },
   "dependencies": {
-    "@ember/test-waiters": "^3.0.0",
+    "@ember/test-waiters": "^4.0.0",
     "ember-cli-babel": "^8.0.0",
     "ember-cli-htmlbars": "^6.0.0",
     "ember-cli-typescript": "^5.0.0"
