@@ -107,7 +107,7 @@
     "prettier": "^3.0.0",
     "qunit": "^2.16.0",
     "qunit-dom": "^1.6.0",
-    "semantic-release": "^24.0.0",
+    "semantic-release": "^25.0.0",
     "typescript": "^5.0.0",
     "webpack": "^5.51.1"
   },
